@@ -88,6 +88,22 @@ final class UpdatesManager: NSObject, ObservableObject {
 
 // MARK: UpdatesManager: SPUUpdaterDelegate
 extension UpdatesManager: @preconcurrency SPUUpdaterDelegate {
+    /// Rejects every update check.
+    ///
+    /// This build is a personal fork. The upstream appcast would replace it
+    /// with an official release, which reintroduces the issues this fork
+    /// corrects. Update the fork by rebuilding it from source instead.
+    func updater(_ updater: SPUUpdater, mayPerform updateCheck: SPUUpdateCheck) throws {
+        throw NSError(
+            domain: SUSparkleErrorDomain,
+            code: Int(SUError.noUpdateError.rawValue),
+            userInfo: [
+                NSLocalizedDescriptionKey: "Updates are disabled for this build.",
+                NSLocalizedRecoverySuggestionErrorKey: "This copy of Ice is built from a personal fork. Rebuild it from source to update.",
+            ]
+        )
+    }
+
     func updater(_ updater: SPUUpdater, willScheduleUpdateCheckAfterDelay delay: TimeInterval) {
         guard let appState else {
             return

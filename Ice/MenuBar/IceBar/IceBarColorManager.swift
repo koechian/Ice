@@ -26,10 +26,12 @@ final class IceBarColorManager: ObservableObject {
         if let iceBarPanel {
             iceBarPanel.publisher(for: \.screen)
                 .receive(on: DispatchQueue.main)
-                .sink { [weak self] screen in
+                .sink { [weak self, weak iceBarPanel] screen in
                     guard
                         let self,
+                        let iceBarPanel,
                         let screen,
+                        iceBarPanel.isVisible,
                         screen == .main
                     else {
                         return
@@ -88,19 +90,20 @@ final class IceBarColorManager: ObservableObject {
             )
             .receive(on: DispatchQueue.main)
             .sink { [weak self, weak iceBarPanel] in
+                // Capturing the menu bar is costly, and can stall on macOS 15
+                // and later, so only refresh while the Ice Bar is displayed.
                 guard
                     let self,
                     let iceBarPanel,
                     let screen = iceBarPanel.screen,
+                    iceBarPanel.isVisible,
                     screen == .main
                 else {
                     return
                 }
                 updateWindowImage(for: screen)
-                if iceBarPanel.isVisible {
-                    withAnimation {
-                        self.updateColorInfo(with: iceBarPanel.frame, screen: screen)
-                    }
+                withAnimation {
+                    self.updateColorInfo(with: iceBarPanel.frame, screen: screen)
                 }
             }
             .store(in: &c)
