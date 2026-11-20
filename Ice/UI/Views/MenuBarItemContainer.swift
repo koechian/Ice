@@ -19,6 +19,7 @@ struct MenuBarItemContainer<Content: View>: View {
     @ObservedObject private var appState: AppState
     @ObservedObject private var appearanceManager: MenuBarAppearanceManager
     @ObservedObject private var menuBarManager: MenuBarManager
+    @ObservedObject private var advancedSettings: AdvancedSettings
 
     private let accessor: ColorInfoAccessor
     private let content: Content
@@ -32,8 +33,15 @@ struct MenuBarItemContainer<Content: View>: View {
         }
     }
 
+    private var usesSystemMaterial: Bool {
+        advancedSettings.menuBarColorMethod == .systemMaterial
+    }
+
     private var foreground: Color {
-        colorInfo?.isBright == true ? .black : .white
+        if usesSystemMaterial {
+            return .primary
+        }
+        return colorInfo?.isBright == true ? .black : .white
     }
 
     private var configuration: MenuBarAppearancePartialConfiguration {
@@ -44,6 +52,7 @@ struct MenuBarItemContainer<Content: View>: View {
         self.appState = appState
         self.appearanceManager = appState.appearanceManager
         self.menuBarManager = appState.menuBarManager
+        self.advancedSettings = appState.settings.advanced
         self.accessor = accessor
         self.content = content()
     }
@@ -65,6 +74,8 @@ struct MenuBarItemContainer<Content: View>: View {
     private var contentBackground: some View {
         if appState.activeSpace.isFullscreen {
             Color.black
+        } else if usesSystemMaterial {
+            MenuBarMaterialBackground()
         } else if let colorInfo {
             Color(cgColor: colorInfo.color)
         } else {
@@ -83,6 +94,25 @@ struct MenuBarItemContainer<Content: View>: View {
             {
                 Color(cgColor: color)
             }
+        }
+    }
+}
+
+// MARK: - MenuBarMaterialBackground
+
+/// A background drawn with the system material that the window server
+/// blends with the content behind the window.
+///
+/// On macOS 26 and later, this is the Liquid Glass material used by the
+/// system's bars and menus. Earlier versions use the menu material.
+struct MenuBarMaterialBackground: View {
+    var body: some View {
+        if #available(macOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            VisualEffectView(material: .menu, blendingMode: .behindWindow)
         }
     }
 }

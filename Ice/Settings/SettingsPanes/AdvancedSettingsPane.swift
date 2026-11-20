@@ -36,6 +36,9 @@ struct AdvancedSettingsPane: View {
                 showOnHoverDelay
                 tempShowInterval
             }
+            IceSection("Menu Bar Color") {
+                menuBarColorMethod
+            }
             IceSection("Permissions") {
                 allPermissions
             }
@@ -64,6 +67,27 @@ struct AdvancedSettingsPane: View {
             ForEach(SectionDividerStyle.allCases) { style in
                 Text(style.localized).tag(style)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var menuBarColorMethod: some View {
+        IcePicker("Menu bar color source", selection: $settings.menuBarColorMethod) {
+            ForEach(MenuBarColorMethod.allCases) { method in
+                Text(method.localized).tag(method)
+            }
+        }
+        .annotation {
+            Text(
+                """
+                How the Ice Bar, search panel and layout editor match the menu bar. \
+                Wallpaper image reads the desktop picture file directly, and is the \
+                default. Screen capture matches tinted menu bars, but can stall on \
+                macOS 15 and later. System material uses the system's translucent \
+                background.
+                """
+            )
+            .padding(.trailing, 75)
         }
     }
 

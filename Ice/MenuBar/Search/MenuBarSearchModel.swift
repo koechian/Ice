@@ -21,9 +21,12 @@ final class MenuBarSearchModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
+    private weak var appState: AppState?
+
     let fuse = Fuse(threshold: 0.5)
 
-    func performSetup(with panel: MenuBarSearchPanel) {
+    func performSetup(with panel: MenuBarSearchPanel, appState: AppState) {
+        self.appState = appState
         configureCancellables(with: panel)
     }
 
@@ -46,28 +49,17 @@ final class MenuBarSearchModel: ObservableObject {
     }
 
     private func updateAverageColorInfo(for screen: NSScreen) {
-        let windows = WindowInfo.createWindows(option: .onScreen)
-        let displayID = screen.displayID
-
-        guard
-            let menuBarWindow = WindowInfo.menuBarWindow(from: windows, for: displayID),
-            let wallpaperWindow = WindowInfo.wallpaperWindow(from: windows, for: displayID)
-        else {
+        guard let appState else {
             return
         }
 
-        guard
-            let image = ScreenCapture.captureWindows(
-                with: [menuBarWindow.windowID, wallpaperWindow.windowID],
-                screenBounds: withMutableCopy(of: wallpaperWindow.bounds) { $0.size.height = 1 },
-                option: .nominalResolution
-            ),
-            let color = image.averageColor(option: .ignoreAlpha)
-        else {
+        let method = appState.settings.advanced.menuBarColorMethod
+        let info = MenuBarColorSampler.averageColorInfo(for: screen, method: method)
+
+        // Keep the previous color if sampling fails.
+        guard info != nil || !method.producesColor else {
             return
         }
-
-        let info = MenuBarAverageColorInfo(color: color, source: .menuBarWindow)
 
         if averageColorInfo != info {
             averageColorInfo = info

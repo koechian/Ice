@@ -75,7 +75,7 @@ final class MenuBarSearchPanel: NSPanel {
     func performSetup(with appState: AppState) {
         self.appState = appState
         configureCancellables()
-        model.performSetup(with: self)
+        model.performSetup(with: self, appState: appState)
     }
 
     /// Configures the internal observers for the panel.

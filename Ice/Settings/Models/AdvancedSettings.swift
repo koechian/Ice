@@ -36,6 +36,10 @@ final class AdvancedSettings: ObservableObject {
     /// Time interval to temporarily show items for.
     @Published var tempShowInterval: TimeInterval = 15
 
+    /// The method used to match Ice's menu bar styled views to the
+    /// appearance of the menu bar.
+    @Published var menuBarColorMethod: MenuBarColorMethod = .wallpaperImage
+
     /// Storage for internal observers.
     private var cancellables = Set<AnyCancellable>()
 
@@ -61,6 +65,12 @@ final class AdvancedSettings: ObservableObject {
         Defaults.ifPresent(key: .sectionDividerStyle) { rawValue in
             if let style = SectionDividerStyle(rawValue: rawValue) {
                 sectionDividerStyle = style
+            }
+        }
+
+        Defaults.ifPresent(key: .menuBarColorMethod) { rawValue in
+            if let method = MenuBarColorMethod(rawValue: rawValue) {
+                menuBarColorMethod = method
             }
         }
     }
@@ -115,6 +125,13 @@ final class AdvancedSettings: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { interval in
                 Defaults.set(interval, forKey: .tempShowInterval)
+            }
+            .store(in: &c)
+
+        $menuBarColorMethod
+            .receive(on: DispatchQueue.main)
+            .sink { method in
+                Defaults.set(method.rawValue, forKey: .menuBarColorMethod)
             }
             .store(in: &c)
 

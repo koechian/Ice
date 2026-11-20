@@ -290,18 +290,29 @@ final class MenuBarOverlayPanel: NSPanel {
     }
 
     /// Stores the area of the desktop wallpaper that is under the menu bar
-    /// of the given display.
-    private func updateDesktopWallpaper(for display: CGDirectDisplayID, with windows: [WindowInfo]) {
+    /// of the given screen.
+    private func updateDesktopWallpaper(for screen: NSScreen, with windows: [WindowInfo]) {
+        let wallpaper: CGImage?
+        if appState?.settings.advanced.menuBarColorMethod == .wallpaperImage {
+            wallpaper = MenuBarColorSampler.wallpaperUnderMenuBar(for: screen)
+        } else {
+            wallpaper = capturedDesktopWallpaper(for: screen.displayID, with: windows)
+        }
+        if desktopWallpaper?.dataProvider?.data != wallpaper?.dataProvider?.data {
+            desktopWallpaper = wallpaper
+        }
+    }
+
+    /// Captures the area of the desktop wallpaper window that is under the
+    /// menu bar of the given display.
+    private func capturedDesktopWallpaper(for display: CGDirectDisplayID, with windows: [WindowInfo]) -> CGImage? {
         guard
             let wallpaperWindow = WindowInfo.wallpaperWindow(from: windows, for: display),
             let menuBarWindow = WindowInfo.menuBarWindow(from: windows, for: display)
         else {
-            return
+            return nil
         }
-        let wallpaper = ScreenCapture.captureWindow(with: wallpaperWindow.windowID, screenBounds: menuBarWindow.bounds)
-        if desktopWallpaper?.dataProvider?.data != wallpaper?.dataProvider?.data {
-            desktopWallpaper = wallpaper
-        }
+        return ScreenCapture.captureWindow(with: wallpaperWindow.windowID, screenBounds: menuBarWindow.bounds)
     }
 
     /// Updates the panel to prepare for display.
@@ -310,7 +321,7 @@ final class MenuBarOverlayPanel: NSPanel {
             updateApplicationMenuFrame(for: screen)
         }
         if flags.contains(.desktopWallpaper) {
-            updateDesktopWallpaper(for: screen.displayID, with: windows)
+            updateDesktopWallpaper(for: screen, with: windows)
         }
     }
 

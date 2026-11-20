@@ -46,7 +46,7 @@ final class IceBarPanel: NSPanel {
     func performSetup(with appState: AppState) {
         self.appState = appState
         configureCancellables()
-        colorManager.performSetup(with: self)
+        colorManager.performSetup(with: self, appState: appState)
     }
 
     /// Configures the internal observers.
@@ -323,7 +323,6 @@ private struct IceBarContentView: View {
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, verticalPadding)
                 .menuBarItemContainer(appState: appState, colorInfo: colorManager.colorInfo)
-                .foregroundStyle(colorManager.colorInfo?.color.brightness ?? 0 > 0.67 ? .black : .white)
                 .clipShape(clipShape)
                 .shadow(color: .black.opacity(shadowOpacity), radius: 2.5)
 

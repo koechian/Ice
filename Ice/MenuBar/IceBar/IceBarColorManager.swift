@@ -6,17 +6,21 @@
 import Combine
 import SwiftUI
 
+@MainActor
 final class IceBarColorManager: ObservableObject {
     @Published private(set) var colorInfo: MenuBarAverageColorInfo?
 
     private weak var iceBarPanel: IceBarPanel?
 
+    private weak var appState: AppState?
+
     private var windowImage: CGImage?
 
     private var cancellables = Set<AnyCancellable>()
 
-    func performSetup(with iceBarPanel: IceBarPanel) {
+    func performSetup(with iceBarPanel: IceBarPanel, appState: AppState) {
         self.iceBarPanel = iceBarPanel
+        self.appState = appState
         configureCancellables()
     }
 
@@ -113,29 +117,23 @@ final class IceBarColorManager: ObservableObject {
     }
 
     private func updateWindowImage(for screen: NSScreen) {
-        let windows = WindowInfo.createWindows(option: .onScreen)
-        let displayID = screen.displayID
-
-        guard
-            let menuBarWindow = WindowInfo.menuBarWindow(from: windows, for: displayID),
-            let wallpaperWindow = WindowInfo.wallpaperWindow(from: windows, for: displayID)
-        else {
+        guard let appState else {
             return
         }
-
-        guard let image = ScreenCapture.captureWindows(
-            with: [menuBarWindow.windowID, wallpaperWindow.windowID],
-            screenBounds: withMutableCopy(of: wallpaperWindow.bounds) { $0.size.height = 1 },
-            option: .nominalResolution
-        ) else {
+        let method = appState.settings.advanced.menuBarColorMethod
+        guard method.producesColor else {
+            windowImage = nil
             return
         }
-
+        guard let image = MenuBarColorSampler.menuBarStrip(for: screen, method: method) else {
+            return
+        }
         windowImage = image
     }
 
     private func updateColorInfo(with frame: CGRect, screen: NSScreen) {
         guard let image = windowImage else {
+            colorInfo = nil
             return
         }
 

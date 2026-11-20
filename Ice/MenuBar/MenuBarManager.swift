@@ -146,6 +146,14 @@ final class MenuBarManager: ObservableObject {
             }
             .store(in: &c)
 
+        appState?.settings.advanced.$menuBarColorMethod
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateAverageColorInfo()
+            }
+            .store(in: &c)
+
         // Hide application menus when a section is shown (if applicable).
         Publishers.MergeMany(sections.map { $0.controlItem.$state })
             .receive(on: DispatchQueue.main)
@@ -224,6 +232,7 @@ final class MenuBarManager: ObservableObject {
     /// of the menu bar.
     func updateAverageColorInfo() {
         guard
+            let appState,
             let settingsWindow,
             settingsWindow.isVisible,
             let screen = settingsWindow.screen
@@ -231,28 +240,14 @@ final class MenuBarManager: ObservableObject {
             return
         }
 
-        let windows = WindowInfo.createWindows(option: .onScreen)
-        let displayID = screen.displayID
+        let method = appState.settings.advanced.menuBarColorMethod
+        let info = MenuBarColorSampler.averageColorInfo(for: screen, method: method)
 
-        guard
-            let menuBarWindow = WindowInfo.menuBarWindow(from: windows, for: displayID),
-            let wallpaperWindow = WindowInfo.wallpaperWindow(from: windows, for: displayID)
-        else {
+        // Keep the previous color if sampling fails, so the layout bars
+        // don't flash to the default color.
+        guard info != nil || !method.producesColor else {
             return
         }
-
-        guard
-            let image = ScreenCapture.captureWindows(
-                with: [menuBarWindow.windowID, wallpaperWindow.windowID],
-                screenBounds: withMutableCopy(of: wallpaperWindow.bounds) { $0.size.height = 1 },
-                option: .nominalResolution
-            ),
-            let color = image.averageColor(option: .ignoreAlpha)
-        else {
-            return
-        }
-
-        let info = MenuBarAverageColorInfo(color: color, source: .menuBarWindow)
 
         if averageColorInfo != info {
             averageColorInfo = info
