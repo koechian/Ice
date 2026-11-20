@@ -40,6 +40,9 @@ final class AppState: ObservableObject {
     /// Global cache for menu bar item images.
     let imageCache = MenuBarItemImageCache()
 
+    /// Manager for rules that move menu bar items between sections.
+    let placementRuleManager = PlacementRuleManager()
+
     /// Manager for input events received by the app.
     let hidEventManager = HIDEventManager()
 
@@ -70,6 +73,7 @@ final class AppState: ObservableObject {
         hidEventManager.performSetup(with: self)
         await itemManager.performSetup(with: self)
         imageCache.performSetup(with: self)
+        placementRuleManager.performSetup(with: self)
         updatesManager.performSetup(with: self)
         userNotificationManager.performSetup(with: self)
 

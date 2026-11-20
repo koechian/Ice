@@ -164,6 +164,9 @@ extension Defaults {
         case tempShowInterval = "TempShowInterval"
         case menuBarColorMethod = "MenuBarColorMethod"
 
+        // MARK: Placement Rules
+        case placementRules = "PlacementRules"
+
         // MARK: Appearance Settings
         case menuBarAppearanceConfigurationV2 = "MenuBarAppearanceConfigurationV2"
 
