@@ -320,6 +320,16 @@ final class MenuBarItemImageCache: ObservableObject {
         await updateCache(sections: sectionsNeedingDisplay)
     }
 
+    // MARK: Cache Contents
+
+    /// Returns a Boolean value that indicates whether the cache holds an
+    /// image for every managed item in the given section.
+    @MainActor
+    func hasImages(for section: MenuBarSection.Name) -> Bool {
+        let items = appState?.itemManager.itemCache.managedItems(for: section) ?? []
+        return !items.isEmpty && items.allSatisfy { images[$0.tag] != nil }
+    }
+
     // MARK: Cache Failed
 
     /// Returns a Boolean value that indicates whether caching menu bar items

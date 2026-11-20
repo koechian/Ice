@@ -168,16 +168,7 @@ final class IceBarPanel: NSPanel {
         appState.navigationState.isIceBarPresented = true
         currentSection = section
 
-        let cacheTask = Task(timeout: .seconds(1)) {
-            await appState.itemManager.cacheItemsIfNeeded()
-            await appState.imageCache.updateCache()
-        }
-
-        do {
-            try await cacheTask.value
-        } catch {
-            Logger.default.error("Cache update failed when showing IceBarPanel - \(error)")
-        }
+        await updateCaches(for: section, appState: appState)
 
         contentView = IceBarHostingView(
             appState: appState,
@@ -197,6 +188,41 @@ final class IceBarPanel: NSPanel {
         colorManager.updateAllProperties(with: frame, screen: screen)
 
         orderFrontRegardless()
+    }
+
+    /// Updates the item and image caches before the panel is shown.
+    ///
+    /// The item cache is always brought up to date first; it only does work
+    /// when the menu bar items have changed. Capturing item images is the
+    /// slow part, so if every item in the section already has a cached image,
+    /// the panel is shown immediately and the images are refreshed in the
+    /// background. The panel's views observe the image cache, and update
+    /// when the refreshed images arrive.
+    private func updateCaches(for section: MenuBarSection.Name, appState: AppState) async {
+        let itemTask = Task(timeout: .seconds(1)) {
+            await appState.itemManager.cacheItemsIfNeeded()
+        }
+        do {
+            try await itemTask.value
+        } catch {
+            Logger.default.error("Item cache update failed when showing IceBarPanel - \(error)")
+        }
+
+        if appState.imageCache.hasImages(for: section) {
+            Task {
+                await appState.imageCache.updateCache()
+            }
+            return
+        }
+
+        let imageTask = Task(timeout: .seconds(1)) {
+            await appState.imageCache.updateCache()
+        }
+        do {
+            try await imageTask.value
+        } catch {
+            Logger.default.error("Image cache update failed when showing IceBarPanel - \(error)")
+        }
     }
 
     /// Hides the panel.
